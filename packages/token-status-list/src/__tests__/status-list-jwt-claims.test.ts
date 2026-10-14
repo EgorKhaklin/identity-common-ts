@@ -2,7 +2,7 @@ import { base64url, stringToBytes } from '@owf/identity-common'
 import { describe, expect, it } from 'vitest'
 import { JWT_STATUS_LIST_TYPE } from '../jwt-types'
 import { StatusList } from '../status-list'
-import { verifyStatus } from '../status-list-jwt'
+import { verifyStatus, verifyStatusListJwtClaims } from '../status-list-jwt'
 import { StatusType } from '../types'
 
 const uri = 'https://example.com/statuslists/1'
@@ -91,6 +91,19 @@ describe('verifyStatus (JWT)', () => {
 
     expect(verifyStatus({ uri, idx: 0, token })).toStrictEqual(true)
     expect(() => verifyStatus({ uri, idx: 0, token, skewSeconds: 1 })).toThrow('is in the past')
+  })
+
+  // RFC 7519 section 4.1.4: `exp` is the time "on or after which the JWT MUST NOT be accepted"
+  it('rejects a token at the instant it expires', () => {
+    const exp = seconds(Date.parse('2026-01-01T12:00:00.000Z'))
+    const claims = { sub: uri, iat: exp - 60, exp, status_list: { bits: 1 as const, lst: '' } }
+
+    expect(() => verifyStatusListJwtClaims(claims, { uri, now: new Date(exp * 1000), skewSeconds: 0 })).toThrow(
+      'is in the past'
+    )
+    expect(() =>
+      verifyStatusListJwtClaims(claims, { uri, now: new Date(exp * 1000 - 1), skewSeconds: 0 })
+    ).not.toThrow()
   })
 
   it('applies the clock skew to the issuance time', () => {

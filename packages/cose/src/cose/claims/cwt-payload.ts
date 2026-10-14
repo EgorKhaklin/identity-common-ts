@@ -375,7 +375,7 @@ export class CwtPayload<Structure extends AnyTypedMap = CwtPayloadDecodedStructu
     // `exp` is the first instant the token is no longer valid, so it is an upper bound shifted
     // forward by the skew: a token that expired within the tolerance is still accepted.
     const expirationTime: Date | undefined = this.expirationTime
-    if (expirationTime !== undefined && checkExpirationTime && new Date(expirationTime.getTime() + skewMs) < now) {
+    if (expirationTime !== undefined && checkExpirationTime && new Date(expirationTime.getTime() + skewMs) <= now) {
       throw new CwtClaimVerificationError(
         `The ${claimLabel(RegisteredCwtClaimKey.ExpirationTime, keyLabels)} claim '${expirationTime.toISOString()}' is in the past (compared to '${now.toISOString()}'), and therefore not valid`
       )

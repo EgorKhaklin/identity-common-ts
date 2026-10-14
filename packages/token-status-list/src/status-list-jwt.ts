@@ -118,7 +118,7 @@ export function verifyStatusListJwtClaims(
     }
     // `exp` is the first instant the token is no longer valid, so a token that expired within the
     // tolerance is still accepted.
-  } else if (new Date(expirationTime.getTime() + skewMs) < now) {
+  } else if (new Date(expirationTime.getTime() + skewMs) <= now) {
     throw new SLException(
       `The expiration claim '${expirationTime.toISOString()}' is in the past (compared to '${now.toISOString()}'), and therefore not valid`
     )

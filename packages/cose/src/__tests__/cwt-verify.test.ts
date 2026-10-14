@@ -106,6 +106,19 @@ describe('CwtPayload.verifyClaims', () => {
     expect(() => expired.verifyClaims({ now, skewSeconds: 1, checkExpirationTime: false })).not.toThrow()
   })
 
+  // RFC 8392 section 3.1.4 gives `exp` the meaning of RFC 7519 section 4.1.4: the time "on or after
+  // which the JWT MUST NOT be accepted"
+  test.each([0, 30])('rejects a token at the instant it expires, with a skew of %i seconds', (skewSeconds) => {
+    const expirationTime = minutes(5)
+    const atExpiration = (offsetMs: number) => ({
+      now: new Date(expirationTime.getTime() + skewSeconds * 1000 + offsetMs),
+      skewSeconds,
+    })
+
+    expect(() => payload({ expirationTime }).verifyClaims(atExpiration(0))).toThrow('is in the past')
+    expect(() => payload({ expirationTime }).verifyClaims(atExpiration(-1))).not.toThrow()
+  })
+
   test.each([
     ['nbf', 'notBefore', "'NotBefore (5)'", 'checkNotBefore'],
     ['iat', 'issuedAt', "'IssuedAt (6)'", 'checkIssuedAt'],
