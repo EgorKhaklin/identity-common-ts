@@ -134,6 +134,8 @@ describe('Holder.verifyDeviceRequest with trustedCertificates', () => {
         sessionTranscript,
         verificationCallback: callback,
         trustedCertificates: [leafCert as Uint8Array],
+        // The fixture's reader certificate is valid from 2020-10-01 to 2023-12-31
+        now: new Date('2022-01-01'),
       },
       mdocContext
     )

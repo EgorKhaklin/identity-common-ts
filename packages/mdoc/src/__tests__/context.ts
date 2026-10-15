@@ -101,6 +101,7 @@ export const mdocContext: MdocContext = {
     verifyCertificateChain: async (input) => {
       const { trustedCertificates, x5chain: certificateChain } = input
       if (certificateChain.length === 0) throw new Error('Certificate chain is empty')
+      const now = input.now ?? new Date()
 
       const parsedLeafCertificate = new x509.X509Certificate(certificateChain[0] as Uint8Array<ArrayBuffer>)
       const certificatesToBuildChain = [...certificateChain, ...(trustedCertificates ?? [])].map(
@@ -173,10 +174,16 @@ export const mdocContext: MdocContext = {
         //   )
         // }
 
-        if (!skipSignatureVerification) {
-          await cert.verify({
-            publicKey,
-          })
+        if (!skipSignatureVerification && !(await cert.verify({ publicKey, signatureOnly: true }))) {
+          throw new Error(`The signature of certificate '${cert.subject}' is invalid`)
+        }
+
+        // RFC 5280, section 4.1.2.5: the validity period runs from notBefore through notAfter, inclusive.
+        // This also applies when the signature verification is skipped.
+        if (now < cert.notBefore || now > cert.notAfter) {
+          throw new Error(
+            `Certificate '${cert.subject}' is not valid at ${now.toISOString()}; its validity period is ${cert.notBefore.toISOString()} to ${cert.notAfter.toISOString()}`
+          )
         }
         previousCertificate = cert
       }
