@@ -92,6 +92,29 @@ describe('example context verifyCertificateChain', () => {
     await expect(verifyChain({ leaf, trusted: root.certificate })).rejects.toThrow('No trusted certificate was found')
   })
 
+  test('rejects a certificate whose signature does not verify', async () => {
+    const { certificate } = await createRoot()
+    const tampered = new Uint8Array(certificate.rawData)
+    tampered[tampered.length - 1] ^= 0x01
+
+    // Without trusted certificates, the first certificate in the chain is checked against its own key
+    await expect(
+      mdocContext.x509.verifyCertificateChain({
+        trustedCertificates: undefined as unknown as Uint8Array[],
+        x5chain: [tampered],
+      })
+    ).rejects.toThrow('is invalid')
+  })
+
+  test('rejects an invalid date', async () => {
+    const root = await createRoot()
+    const leaf = await createLeaf(root, { notBefore: -hour, notAfter: hour })
+
+    await expect(verifyChain({ leaf, trusted: root.certificate, now: new Date(Number.NaN) })).rejects.toThrow(
+      'is not valid at'
+    )
+  })
+
   test('checks the validity period at the given time', async () => {
     const root = await createRoot()
     const valid = await createLeaf(root, { notBefore: -hour, notAfter: hour })

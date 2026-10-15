@@ -179,10 +179,10 @@ export const mdocContext: MdocContext = {
         }
 
         // RFC 5280, section 4.1.2.5: the validity period runs from notBefore through notAfter, inclusive.
-        // This also applies when the signature verification is skipped.
-        if (now < cert.notBefore || now > cert.notAfter) {
+        // This also applies when the signature verification is skipped. Written so an invalid date fails.
+        if (!(now >= cert.notBefore && now <= cert.notAfter)) {
           throw new Error(
-            `Certificate '${cert.subject}' is not valid at ${now.toISOString()}; its validity period is ${cert.notBefore.toISOString()} to ${cert.notAfter.toISOString()}`
+            `Certificate '${cert.subject}' is not valid at ${now.toUTCString()}; its validity period is ${cert.notBefore.toUTCString()} to ${cert.notAfter.toUTCString()}`
           )
         }
         previousCertificate = cert
