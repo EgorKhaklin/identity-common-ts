@@ -174,6 +174,9 @@ export const mdocContext: MdocContext = {
         //   )
         // }
 
+        // This example checks only each certificate's signature and validity period. A production implementation
+        // should use full certificate path validation (RFC 5280, section 6), including revocation (CRL or OCSP),
+        // basicConstraints and path length, key usage, and the rejection of unrecognised critical extensions.
         if (!skipSignatureVerification && !(await cert.verify({ publicKey, signatureOnly: true }))) {
           throw new Error(`The signature of certificate '${cert.subject}' is invalid`)
         }
